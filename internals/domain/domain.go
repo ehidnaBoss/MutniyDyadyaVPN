@@ -20,12 +20,14 @@ type Subscription struct {
 }
 
 type Payment struct {
-	ID             int     `json:"id"`
-	UserChatID     int64   `json:"user_chat_id"`
-	SubscriptionID int     `json:"subscription_id"`
-	Amount         float64 `json:"amount"`
-	Status         string  `json:"status"`
-	PaymentMethod  string  `json:"payment_method"`
-	CreatedAt      string  `json:"created_at"`
-	ConfirmedAt    string  `json:"confirmed_at"`
+	ID                      int     `db:"id" json:"id"`
+	UserChatID              int64   `db:"user_chat_id" json:"user_chat_id"`
+	SubscriptionID          int     `db:"subscription_id" json:"subscription_id"`
+	Amount                  float64 `db:"amount" json:"amount"`
+	Currency                string  `db:"currency" json:"currency"`
+	Status                  string  `db:"status" json:"status"`
+	PaymentMethod           string  `db:"payment_method" json:"payment_method"`
+	ProviderTransactionID string  `json:"provider_transaction_id" db:"provider_transaction_id"`
+	CreatedAt               string  `db:"created_at" json:"created_at"`
+	ConfirmedAt             string  `db:"confirmed_at" json:"confirmed_at"`
 }

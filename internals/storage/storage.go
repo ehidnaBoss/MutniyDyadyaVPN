@@ -5,12 +5,11 @@ import (
 	"log"
 
 	_ "github.com/mattn/go-sqlite3"
-	"mutinydydayvpn/internals/domain"
 )
 
-func initDB() *sql.DB{
-	db,err := sql.Open("sqlite3", "./bot.db")
-	if err != nil{
+func InitDB() *sql.DB {
+	db, err := sql.Open("sqlite3", "./bot.db")
+	if err != nil {
 		log.Fatal("Ошибка подключения к БД:", err)
 	}
 	
@@ -22,7 +21,6 @@ func initDB() *sql.DB{
 	
 	log.Println("База данных инициализирована")
 	return db
-
 }
 
 func createTables(db *sql.DB) {
@@ -50,15 +48,17 @@ func createTables(db *sql.DB) {
 		FOREIGN KEY (user_chat_id) REFERENCES users(chat_id)
 	);`
 
-	// Таблица платежей
+	// Обновленная таблица платежей для CloudPayments
 	createPaymentsTable := `
 	CREATE TABLE IF NOT EXISTS payments (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		user_chat_id INTEGER NOT NULL,
 		subscription_id INTEGER,
 		amount REAL NOT NULL,
-		status TEXT DEFAULT 'pending', -- 'pending', 'confirmed', 'failed'
-		payment_method TEXT,
+		currency TEXT DEFAULT 'RUB',
+		status TEXT DEFAULT 'pending', -- 'pending', 'completed', 'failed', 'cancelled'
+		payment_method TEXT DEFAULT 'cloudpayments',
+		provider_transaction_id TEXT,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		confirmed_at DATETIME,
 		FOREIGN KEY (user_chat_id) REFERENCES users(chat_id),
@@ -90,76 +90,24 @@ func createTables(db *sql.DB) {
 		}
 	}
 
+	// Создаем индексы для быстрого поиска
+	createIndexes(db)
+
 	log.Println("Таблицы созданы успешно")
 }
 
-// Функции для работы с пользователями
-func createUser(db *sql.DB, chatID int64, username, firstName, lastName string) error {
-	query := `
-	INSERT OR IGNORE INTO users (chat_id, username, first_name, last_name) 
-	VALUES (?, ?, ?, ?)`
-	
-	_, err := db.Exec(query, chatID, username, firstName, lastName)
-	return err
-}
-
-func getUser(db *sql.DB, chatID int64) (*domain.User, error) {
-	query := `SELECT id, chat_id, username, first_name, last_name, created_at FROM users WHERE chat_id = ?`
-	
-	user := &User{}
-	err := db.QueryRow(query, chatID).Scan(
-		&user.ID, &user.ChatID, &user.Username, 
-		&user.FirstName, &user.LastName, &user.CreatedAt,
-	)
-	
-	if err != nil {
-		return nil, err
+func createIndexes(db *sql.DB) {
+	indexes := []string{
+		`CREATE INDEX IF NOT EXISTS idx_payments_user_chat_id ON payments(user_chat_id);`,
+		`CREATE INDEX IF NOT EXISTS idx_payments_provider_transaction_id ON payments(provider_transaction_id);`,
+		`CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);`,
+		`CREATE INDEX IF NOT EXISTS idx_subscriptions_user_chat_id ON subscriptions(user_chat_id);`,
+		`CREATE INDEX IF NOT EXISTS idx_user_logs_user_chat_id ON user_logs(user_chat_id);`,
 	}
-	
-	return user, nil
-}
 
-// Функции для работы с подписками
-func createSubscription(db *sql.DB, chatID int64, planType, key string) error {
-	query := `
-	INSERT INTO subscriptions (user_chat_id, plan_type, activation_key, is_active) 
-	VALUES (?, ?, ?, ?)`
-	
-	_, err := db.Exec(query, chatID, planType, key, true)
-	return err
-}
-
-func getActiveSubscriptions(db *sql.DB, chatID int64) ([]domain.Subscription, error) {
-	query := `
-	SELECT id, user_chat_id, plan_type, activation_key, is_active, created_at, expires_at 
-	FROM subscriptions 
-	WHERE user_chat_id = ? AND is_active = true`
-	
-	rows, err := db.Query(query, chatID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var subscriptions []domain.Subscription
-	for rows.Next() {
-		var sub domain.Subscription
-		err := rows.Scan(
-			&sub.ID, &sub.UserChatID, &sub.PlanType, 
-			&sub.ActivationKey, &sub.IsActive, &sub.CreatedAt, &sub.ExpiresAt,
-		)
-		if err != nil {
-			return nil, err
+	for _, index := range indexes {
+		if _, err := db.Exec(index); err != nil {
+			log.Printf("Предупреждение при создании индекса: %v", err)
 		}
-		subscriptions = append(subscriptions, sub)
 	}
-	
-	return subscriptions, nil
-}
-
-// Функция для логирования действий пользователя
-func logUserAction(db *sql.DB, chatID int64, action, details string) error {
-	query := `INSERT INTO user_logs (user_chat_id, action, details) VALUES (?, ?, ?)`
-	_, err := db.Exec(query, chatID, action, details)
-	return err
 }
