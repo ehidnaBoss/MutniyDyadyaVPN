@@ -1,4 +1,4 @@
-package storage
+package main
 
 import (
 	"database/sql"
@@ -6,6 +6,10 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 )
+
+func main(){
+	InitDB()
+}
 
 func InitDB() *sql.DB {
 	db, err := sql.Open("sqlite3", "./bot.db")
