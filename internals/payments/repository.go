@@ -11,7 +11,7 @@ type Repository interface {
 	Create(ctx context.Context, payment *domain.Payment) error
 	Update(ctx context.Context, payment *domain.Payment) error
 	GetByID(ctx context.Context, id int) (*domain.Payment, error)
-	GetByProviderTxID(ctx context.Context, txID string) (*domain.Payment, error)
+	GetByProviderTransactionID(ctx context.Context, txID string) (*domain.Payment, error)
 	GetByUserChatID(ctx context.Context, userChatID int64) ([]*domain.Payment, error)
 	GetByStatus(ctx context.Context, status string) ([]*domain.Payment, error)
 }
