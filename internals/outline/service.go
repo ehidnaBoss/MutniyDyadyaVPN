@@ -168,8 +168,14 @@ func (s *Service) GetServerStats(ctx context.Context) (*domain.ServerStats, erro
 }
 
 // TestConnection проверяет подключение к серверу
-func (s *Service) TestConnection(ctx context.Context) error {
-	return s.client.TestConnection(ctx)
+func (c *Client) TestConnection(ctx context.Context) error {
+	// Используем простой GET запрос к /server для проверки соединения
+	_, err := c.makeRequest(ctx, "GET", "/server", nil)
+	if err != nil {
+		return fmt.Errorf("connection test failed: %w", err)
+	}
+	
+	return nil
 }
 
 // ExtendKey продлевает срок действия ключа (логически, не на уровне Outline)

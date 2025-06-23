@@ -31,3 +31,25 @@ type Payment struct {
 	CreatedAt               string  `db:"created_at" json:"created_at"`
 	ConfirmedAt             string  `db:"confirmed_at" json:"confirmed_at"`
 }
+
+type VPNKey struct {
+	ID           int    `json:"id" db:"id"`
+	OutlineKeyID string `json:"outline_key_id" db:"outline_key_id"`
+	UserChatID   int64  `json:"user_chat_id" db:"user_chat_id"`
+	KeyName      string `json:"key_name" db:"key_name"`
+	AccessURL    string `json:"access_url" db:"access_url"`
+	PlanMonths   int    `json:"plan_months" db:"plan_months"`
+	IsActive     bool   `json:"is_active" db:"is_active"`
+	CreatedAt    string `json:"created_at" db:"created_at"`
+	ExpiresAt    string `json:"expires_at" db:"expires_at"`
+}
+
+
+type ServerStats struct {
+	ServerName    string  `json:"server_name"`
+	ServerID      string  `json:"server_id"`
+	TotalKeys     int     `json:"total_keys"`
+	ActiveKeys    int     `json:"active_keys"`
+	TotalUsageGB  float64 `json:"total_usage_gb"`
+	CreatedAt     string  `json:"created_at"`
+}
